@@ -1,5 +1,6 @@
 import boto3
-
+import os
+import time
 
 def get_ec2_client(region, aws_access_key_id, aws_secret_access_key):
 
@@ -117,7 +118,30 @@ def build_keypair(ec2_client, TAG_ROOT):
 
     return key_pair_name
 
-def build_security_group(ec2_client, VpcId, TAG_ROOT):
+def write_keypair_to_file(filename, key_material):
+    """
+    Writes the creted keypair to a local file.
+    """
+    if os.path.exists(filename):
+        os.remove(filename)
+
+    with open(filename, "w") as file:
+        file.write(key_material)
+
+def add_security_group_rule(ec2_client, security_group_id, INSTANCE_ACCESS_PORT):
+    ec2_client.authorize_security_group_ingress(
+        GroupId=security_group_id,
+        IpPermissions=[
+            {
+                "IpProtocol": "tcp",
+                "FromPort": int(INSTANCE_ACCESS_PORT),
+                "ToPort": int(INSTANCE_ACCESS_PORT),
+                "IpRanges": [{"CidrIp": "0.0.0.0/0"}],
+            }
+        ],
+    )
+
+def build_security_group(ec2_client, VpcId, INSTANCE_ACCESS_PORT, TAG_ROOT):
 
     try:
         security_group_response_data = ec2_client.create_security_group(
@@ -130,7 +154,7 @@ def build_security_group(ec2_client, VpcId, TAG_ROOT):
         security_group_id = security_group_response_data["GroupId"]
         ec2_client.create_tags(
             Resources=[security_group_id],
-            Tags=[{"Key": "Name", "Value": instance_identifier + "_SECURITY_GROUP"}],
+            Tags=[{"Key": "Name", "Value": TAG_ROOT + "_SECURITY_GROUP"}],
         )
     except Exception as e:
         print("Couldn't create security group. Error:")
@@ -138,7 +162,7 @@ def build_security_group(ec2_client, VpcId, TAG_ROOT):
         pass
 
     try:
-        add_security_group_rule(ec2_client, security_group_id)
+        add_security_group_rule(ec2_client, security_group_id, INSTANCE_ACCESS_PORT)
         print("Added rule to security group")
 
     except Exception as e:
@@ -185,14 +209,14 @@ def build_ec2_instance(ec2_client, instance_ami, security_group_id, subnet_id, k
             MaxCount=1,
             SecurityGroupIds=[security_group_id],
             SubnetId=subnet_id,
-            UserData=open(user_data_startup_script).read(),
+            UserData=userdata,
             InstanceType=instance_type,
         )
 
         instance_id = instance_data["Instances"][0]["InstanceId"]
         ec2_client.create_tags(
             Resources=[instance_id],
-            Tags=[{"Key": "Name", "Value": TAG_NAME + "_Instance"}],
+            Tags=[{"Key": "Name", "Value": TAG_ROOT + "_Instance"}],
         )
 
     except Exception as e:
