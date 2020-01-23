@@ -12,5 +12,5 @@ apt upgrade -y
 apt install docker-ce -y
 service docker start
 
-docker run -p 80:8888 jupyter/scipy-notebook:17aba6048f44
+# docker run -p 80:8888 jupyter/scipy-notebook:17aba6048f44
 
