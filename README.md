@@ -10,11 +10,13 @@ Includes a simple mechanism to record the details of what you launch, and they a
 tbd
 ### Creating a user
 
+- [x] a
+- [x] b
+- [x] c
 
-
-![select_iam_service](https://github.com/DanielJohnHarty/AWS_RSTUDIO_SERVER_SETUP/blob/master/imgs/select_iam.png)
-![goto_iams_user_section](https://github.com/DanielJohnHarty/AWS_RSTUDIO_SERVER_SETUP/blob/master/imgs/users.png)
-![create_new_user](https://github.com/DanielJohnHarty/AWS_RSTUDIO_SERVER_SETUP/blob/master/imgs/user_create.png)
-![set_user_permissions](https://github.com/DanielJohnHarty/AWS_RSTUDIO_SERVER_SETUP/blob/master/imgs/permissions.png)
-![add_optional_tag](https://github.com/DanielJohnHarty/AWS_RSTUDIO_SERVER_SETUP/blob/master/imgs/tags.png)
-![download_cv](https://github.com/DanielJohnHarty/AWS_RSTUDIO_SERVER_SETUP/blob/master/imgs/dl_cv.png)
+![select_iam_service](https://github.com/DanielJohnHarty/custom_aws_jupyter_launcher/blob/master/imgs/select_iam.png)
+![goto_iams_user_section](https://github.com/DanielJohnHarty/custom_aws_jupyter_launcher/blob/master/imgs/users.png)
+![create_new_user](https://github.com/DanielJohnHarty/custom_aws_jupyter_launcher/blob/master/imgs/user_create.png)
+![set_user_permissions](https://github.com/DanielJohnHarty/custom_aws_jupyter_launcher/blob/master/imgs/permissions.png)
+![add_optional_tag](https://github.com/DanielJohnHarty/custom_aws_jupyter_launcher/blob/master/imgs/tags.png)
+![download_cv](https://github.com/DanielJohnHarty/custom_aws_jupyter_launcher/blob/master/imgs/dl_cv.png)
