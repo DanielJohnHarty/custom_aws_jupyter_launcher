@@ -1,8 +1,9 @@
 import tkinter
-from tkinter import filedialog
+from tkinter import messagebox, filedialog
 
+SAVED_FILE_EXTENTION = ".aws"
 FILETYPES = [
-            ("All Files", ("*.*")),
+            
             ("Launched AWS Instances", "*.aws")
             ]
 
@@ -26,7 +27,7 @@ def tkinter_build_and_teardown(func):
     return wrapped_tkinter_call
 
 @tkinter_build_and_teardown
-def get_system_filepath():
+def get_saved_file_filepath():
     """
     Returns the selected filepath.
     """
@@ -40,4 +41,10 @@ def get_save_as_filepath():
     would lead to overwriting a file.
     """
     filename = filedialog.asksaveasfilename(filetypes=FILETYPES)
+    filename = filename + SAVED_FILE_EXTENTION if not filename.endswith(SAVED_FILE_EXTENTION) else filename
     return filename
+
+@tkinter_build_and_teardown
+def confirm_save():
+    to_save = messagebox.askokcancel("Question","Save your launched instance details?")
+    return to_save

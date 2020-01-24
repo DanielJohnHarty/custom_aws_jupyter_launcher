@@ -1,12 +1,11 @@
 import configparser
-import boto3
 import time
 import os
 import datetime
 import sys
 import pickle
-import boto_calls as bc
-
+import boto3
+import gui_elements
 
 class Instance:
     def log_warnings(func, *args, **kwargs):
@@ -22,7 +21,6 @@ class Instance:
                 print(
                     f"""Error during self_destruct. Loging to your AWS console
                       to be sure that all the instances pieces have been removed.
-                      Many AWS billable services such as ec2 instance or elastic ips will
                       incurr charges whether you are using them or not, so be diligent and
                       check manually that nothing has been left behind in the auto-destruct sequence.
                       The error details are as follows:\n{e}"""
@@ -32,6 +30,7 @@ class Instance:
         return wrapper
 
     def __init__(self):
+        self.region = None
         self.vpc_id = None
         self.igw_id = None
         self.keypair_name = None
@@ -41,6 +40,17 @@ class Instance:
         self.ec2_instance_id = None
         self.public_ip = None
         self.allocation_id = None
+
+    def __str__(self):
+        s = ""
+        for att in vars(self):
+            value = self.__getattribute__(att)
+            s += f"{att} -> {value}\n"
+        return s
+
+    def __repr__(self):
+        return self.__str__()
+
 
     def self_destruct(self, client):
         """
@@ -203,20 +213,30 @@ class InstanceFactory:
     def __repr__(self):
         return self.__str__()
 
-    def pickle_instance_data(self, instance: Instance()):
+    def save_instance_to_file(self, instance:Instance):
+        filename = gui_elements.get_save_as_filepath()
+        pickle.dump(instance, open(filename, "wb"))
 
-        filename = instance.ec2_instance_id + ".p"
-        instance_data = vars(instance)
-        pickle.dump(instance_data, open(filename, "wb"))
+    def load_instance_from_savefile(self)->Instance:
 
-    def load_pickled_instance_data(self, filename):
-        instance_data = pickle.load(open(filename, "rb"))
-        return instance_data
+        # Load pickled data to dict
+        filename = gui_elements.get_saved_file_filepath()
+        fe = gui_elements.SAVED_FILE_EXTENTION
+        
+        # End procedure if the file type looks wrong
+        if not filename.endswith(fe):
+            print(f"Are you sure about that file? It should be a {fe} file...")
+            return
+
+        instance = pickle.load(open(filename, "rb"))
+
+        return instance
 
     def launch_instance(self):
 
         try:
             instance = self.get_blank_instance()
+            instance.region = self.REGION
             client = self.get_client()
             self.build_vpc(client, instance)
             self.build_igw(client, instance)
@@ -227,12 +247,21 @@ class InstanceFactory:
             self.build_ec2_instance(client, instance)
             self.allocate_public_ip(client, instance)
             self.associate_public_ip(client, instance)
+
+            print("Instance created!")
+
+            if gui_elements.confirm_save():
+                print("Save Instance?")
+                self.save_instance_to_file(instance)
+
+            
         except Exception as e:
             print(f"An error occured\n{e}")
             print(f"Would you like me to remove the parts which were created?")
             if input().lower() in ["yes", "y"]:
                 instance.self_destruct(client)
 
+        
         return instance
 
     def build_vpc(self, client, instance):
@@ -260,6 +289,10 @@ class InstanceFactory:
                 VpcId=instance.vpc_id, CidrBlock=self.SUBNET_CIDR_BLOCK
             )
             subnet_id = subnet_data["Subnet"]["SubnetId"]
+
+            subnet_waiter = client.get_waiter('subnet_available')
+            subnet_waiter.wait(SubnetIds=[subnet_id])
+
             client.create_tags(
                 Resources=[subnet_id],
                 Tags=[{"Key": "Name", "Value": self.TAG_ROOT + "_Public_Subnet"}],
@@ -370,8 +403,11 @@ class InstanceFactory:
                 VpcId=instance.vpc_id,
             )
 
-            client.get_waiter("security_group_exists").wait()
             security_group_id = security_group_response_data["GroupId"]
+
+            subgroup_waiter = client.get_waiter('security_group_exists')
+            subgroup_waiter.wait(GroupIds=[security_group_id])
+
             client.create_tags(
                 Resources=[security_group_id],
                 Tags=[{"Key": "Name", "Value": self.TAG_ROOT + "_SECURITY_GROUP"}],
@@ -409,6 +445,11 @@ class InstanceFactory:
     def associate_public_ip(self, client, instance):
 
         print(f"""Just wait a few seconds before asociating a public IP please..""")
+
+        # These aren't the right waiters...
+        # instance_exists_waiter = client.get_waiter('instance_exists')
+        # instance_exists_waiter.wait(InstanceIds=[instance.ec2_instance_id])
+
 
         for attempt in range(5):
             try:
@@ -452,3 +493,4 @@ class InstanceFactory:
             print(e)
 
         instance.ec2_instance_id = ec2_instance_id
+
