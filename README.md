@@ -14,8 +14,8 @@ Includes a simple mechanism to record the details of what you launch, and they a
 - [x] [Create an AWS account](https://aws.amazon.com/resources/create-account/) 
 - [x] Creating a user and credentials (*see below*)
 - [x] Update the config.ini file with your user credentials
-- [x] Use `python launcher.py` to create
-- [x] Use `python launcher.py destroy` the code to destroy
+- [x] Use `python launcher.py create <your_config_file>` to create
+- [x] Use `python launcher.py destroy <your_config_file>` to destroy
 
 ## Creating a user and credentials
 
